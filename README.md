@@ -9,7 +9,7 @@ Welcome to the **Solana Starter Kit**! This guide is designed to help you quickl
 Clone the repository in your preferred code editor to start working with the code locally. Use the following commands:
 
 ```bash
-git https://github.com/Primitives-xyz/solana-starter-kit
+git clone https://github.com/Primitives-xyz/solana-starter-kit
 cd solana-starter-kit
 ```
 
