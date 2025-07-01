@@ -83,6 +83,26 @@ export class SwapService {
         throw error
       }
 
+      // If we received a serialized transaction from the direct swap API
+      if (swapResponse.swapInstruction && typeof swapResponse.swapInstruction === 'string') {
+        // Deserialize the transaction
+        const swapTransactionBuf = Buffer.from(swapResponse.swapInstruction, 'base64')
+        const transaction = VersionedTransaction.deserialize(swapTransactionBuf)
+        
+        // If we have additional instructions (like ATA creation), we need to handle them separately
+        // For now, we'll return the transaction as-is since the swap API already includes necessary instructions
+        if (additionalInstructions.length > 0) {
+          console.warn('Additional instructions cannot be added to pre-built swap transaction')
+        }
+        
+        return {
+          transaction,
+          swapResponse,
+          addressLookupTableAccounts: [],
+        }
+      }
+
+      // Fallback to original instruction-based approach if not using direct swap API
       let addressLookupTableAccounts
       try {
         addressLookupTableAccounts = await getAddressLookupTableAccounts(
