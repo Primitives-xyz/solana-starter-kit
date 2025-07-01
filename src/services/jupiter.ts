@@ -103,8 +103,10 @@ export const simulateTransaction = async (
 export const fetchSwapInstructions = async (
   request: SwapInstructionsRequest,
 ): Promise<SwapInstructionsResponse> => {
+  // Using the direct swap API endpoint 
+  // Note: We no longer add referral parameters here as they're handled in the quote API via platformFeeBps
   const response = await fetch(
-    'https://quote-api.jup.ag/v6/swap-instructions',
+    'https://quote-api.jup.ag/v6/swap',
     {
       method: 'POST',
       headers: {
@@ -113,9 +115,11 @@ export const fetchSwapInstructions = async (
       body: JSON.stringify({
         quoteResponse: request.quoteResponse,
         userPublicKey: request.userPublicKey,
-        prioritizationFeeLamports: request.prioritizationFeeLamports,
+        prioritizationFeeLamports: request.prioritizationFeeLamports || 10000,
         dynamicComputeUnitLimit: true,
         dynamicSlippage: request.slippageBps === 'auto' ? true : false,
+        slippageBps: request.slippageBps === 'auto' ? undefined : request.slippageBps,
+        wrapAndUnwrapSol: true,
         useSharedAccounts: false,
         feeAccount: request.feeAccount,
       }),
@@ -123,10 +127,18 @@ export const fetchSwapInstructions = async (
   ).then((res) => res.json())
 
   if (response.error) {
-    throw new Error('Failed to get swap instructions: ' + response.error)
+    throw new Error('Failed to get swap transaction: ' + response.error)
   }
 
-  return response
+  // The direct swap API returns a serialized transaction
+  // We need to extract the necessary data to match our expected interface
+  return {
+    swapInstruction: response.swapTransaction, // The serialized transaction
+    addressLookupTableAddresses: response.addressLookupTableAddresses || [],
+    lastValidBlockHeight: response.lastValidBlockHeight,
+    computeUnitLimit: response.computeUnitLimit,
+    prioritizationFeeLamports: response.prioritizationFeeLamports,
+  }
 }
 
 // Function to create SSE transfer instruction
