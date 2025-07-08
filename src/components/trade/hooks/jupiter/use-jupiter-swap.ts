@@ -50,9 +50,15 @@ interface QuoteResponse {
 
 export const DEFAULT_SLIPPAGE_BPS = 'auto' // Default to auto slippage
 export const DEFAULT_SLIPPAGE_VALUE = 50 // 0.5% as base value when needed
-export const PLATFORM_FEE_BPS = 80
-export const PLATFORM_FEE_ACCOUNT =
-  '8jTiTDW9ZbMHvAD9SZWvhPfRx5gUgK7HACMdgbFp2tUz'
+
+// Jupiter v6 API uses platformFeeBps in the quote API for fee collection
+// The fee is taken from the output amount of the swap
+export const REFERRAL_ACCOUNT = process.env.NEXT_PUBLIC_JUP_REFERRAL_ACCOUNT || '3i9DA5ddTXwDLdaKRpK9BA4oXumVpPWWGuyD3YKxPs1j'
+export const REFERRAL_FEE_BPS = 251 // 2.51% referral fee
+
+// Legacy platform fee constants (kept for reference)
+// export const PLATFORM_FEE_BPS = 80
+// export const PLATFORM_FEE_ACCOUNT = '8jTiTDW9ZbMHvAD9SZWvhPfRx5gUgK7HACMdgbFp2tUz'
 
 export function useJupiterSwap({
   inputMint,
@@ -112,7 +118,7 @@ export function useJupiterSwap({
         Number(inputAmount) * Math.pow(10, inputDecimals),
       )
       const QUOTE_URL = `
-        https://quote-api.jup.ag/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${inputAmountInDecimals}&slippageBps=${DEFAULT_SLIPPAGE_VALUE}&platformFeeBps=${PLATFORM_FEE_BPS}&feeAccount=${PLATFORM_FEE_ACCOUNT}&swapMode=${swapMode}
+        https://quote-api.jup.ag/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${inputAmountInDecimals}&slippageBps=${DEFAULT_SLIPPAGE_VALUE}&platformFeeBps=${REFERRAL_FEE_BPS}&feeAccount=${REFERRAL_ACCOUNT}&swapMode=${swapMode}
       `
       const response = await fetch(QUOTE_URL).then((res) => res.json())
       if (swapMode == 'ExactIn') {
@@ -214,40 +220,75 @@ export function useJupiterSwap({
 
       toast.dismiss(preparingToastId)
 
-      const signedTransaction = await wallet.signTransaction(transaction)
+      try {
+        const signedTransaction = await wallet.signTransaction(transaction)
 
-      const sendingToastId = toast.loading(
-        LOADINGS.SEND_LOADING.title,
-        LOADINGS.SEND_LOADING.content,
-      )
+        const sendingToastId = toast.loading(
+          LOADINGS.SEND_LOADING.title,
+          LOADINGS.SEND_LOADING.content,
+        )
 
-      const txSig = await connection.sendRawTransaction(
-        signedTransaction.serialize(),
-      )
-      setTxSignature(txSig)
+        const txSig = await connection.sendRawTransaction(
+          signedTransaction.serialize(),
+        )
+        setTxSignature(txSig)
 
-      toast.dismiss(sendingToastId)
-      const confirmToastId = toast.loading(
-        LOADINGS.CONFIRM_LOADING.title,
-        LOADINGS.CONFIRM_LOADING.content,
-      )
+        toast.dismiss(sendingToastId)
+        const confirmToastId = toast.loading(
+          LOADINGS.CONFIRM_LOADING.title,
+          LOADINGS.CONFIRM_LOADING.content,
+        )
 
-      const tx = await connection.confirmTransaction(
-        {
-          signature: txSig,
-          ...(await connection.getLatestBlockhash()),
-        },
-        'confirmed',
-      )
+        const tx = await connection.confirmTransaction(
+          {
+            signature: txSig,
+            ...(await connection.getLatestBlockhash()),
+          },
+          'confirmed',
+        )
 
-      if (tx.value.err) {
-        toast.dismiss(confirmToastId)
-        toast.error(ERRORS.TX_FAILED_ERR.title, ERRORS.TX_FAILED_ERR.content)
-        console.error('Error in confirming tx:', tx.value.err)
-      } else {
-        toast.dismiss(confirmToastId)
-        toast.success(SUCCESS.TX_SUCCESS.title, SUCCESS.TX_SUCCESS.content)
-        setIsFullyConfirmed(true)
+        if (tx.value.err) {
+          toast.dismiss(confirmToastId)
+          toast.error(ERRORS.TX_FAILED_ERR.title, ERRORS.TX_FAILED_ERR.content)
+          console.error('Error in confirming tx:', tx.value.err)
+        } else {
+          toast.dismiss(confirmToastId)
+          toast.success(SUCCESS.TX_SUCCESS.title, SUCCESS.TX_SUCCESS.content)
+          setIsFullyConfirmed(true)
+        }
+      } catch (signError: any) {
+        toast.dismiss()
+        
+        // Enhanced error handling for insufficient SOL balance
+        if (signError.message?.includes('insufficient lamports') ||
+            signError.message?.includes('0x1') ||
+            signError.toString().includes('insufficient lamports')) {
+          
+          // Extract the amounts from the error if possible
+          const match = signError.message?.match(/insufficient lamports (\d+), need (\d+)/)
+          if (match) {
+            const currentLamports = parseInt(match[1])
+            const neededLamports = parseInt(match[2])
+            const currentSOL = (currentLamports / 1e9).toFixed(4)
+            const neededSOL = (neededLamports / 1e9).toFixed(4)
+            const additionalSOL = ((neededLamports - currentLamports) / 1e9).toFixed(4)
+            
+            toast.error('Insufficient SOL Balance', {
+              description: `You need ${additionalSOL} more SOL to complete this transaction. Current: ${currentSOL} SOL, Required: ${neededSOL} SOL for transaction fees and account rent.`,
+              duration: 8000,
+            })
+          } else {
+            toast.error('Insufficient SOL Balance', {
+              description: 'You need more SOL in your wallet to pay for transaction fees and account creation. Please add at least 0.01 SOL to continue.',
+              duration: 8000,
+            })
+          }
+        } else {
+          toast.error('Failed to sign/send transaction', {
+            description: signError.message || 'Unknown error occurred',
+          })
+        }
+        return
       }
     } catch (error) {
       toast.dismiss()

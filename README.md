@@ -2,6 +2,15 @@
 
 Welcome to the **Solana Starter Kit**! This guide is designed to help you quickly start building blockchain applications on Solana by providing a comprehensive template and clear, step-by-step instructions.
 
+## Features
+
+- 🔐 **Web3 Authentication** with Privy (embedded wallets + external wallet support)
+- 🔄 **Token Swapping** with Jupiter integration and referral fee system
+- 👥 **Social Features** with Tapestry social graph API
+- 🖼️ **NFT Portfolio Viewer** with Helius DAS API
+- 📱 **Responsive Design** with modern UI components
+- ⚡ **Real-time Updates** with optimized data fetching
+
 ## User Journey
 
 ### 1. Clone the Repo
@@ -58,6 +67,29 @@ pnpm run dev
 ```
 
 Now you're all set to start coding! Begin by exploring the codebase, and use our documentation to guide your development.
+
+## Jupiter Referral System
+
+This starter kit includes an integrated Jupiter referral system that allows you to earn fees from swaps executed through your application.
+
+### Quick Setup
+
+1. **Sign up for Jupiter Referral Program**: Visit [https://referral.jup.ag/](https://referral.jup.ag/) and create an account
+2. **Get your Referral Account ID**: Copy your referral account from the [Jupiter Dashboard](https://referral.jup.ag/dashboard)
+3. **Add to Environment**: Add your referral account to `.env.local`:
+
+```env
+NEXT_PUBLIC_JUP_REFERRAL_ACCOUNT=your_referral_account_public_key_here
+```
+
+### Features
+
+- **Automatic Fee Collection**: 2.51% referral fee automatically collected from all swaps
+- **Multi-Wallet Support**: Works with both external wallets (Phantom, Solflare) and Privy embedded wallets
+- **Reliable Implementation**: Uses Jupiter's recommended `platformFeeBps` approach to avoid API conflicts
+- **Real-time Tracking**: Monitor earnings via the [Jupiter Referral Dashboard](https://referral.jup.ag/dashboard)
+
+For detailed setup instructions and troubleshooting, see [JUPITER_REFERRAL_SETUP.md](JUPITER_REFERRAL_SETUP.md).
 
 ## NFT Portfolio Viewer Setup
 
