@@ -1,30 +1,34 @@
-'use client'
+"use client";
 
-import { useGetProfiles } from '@/components/auth/hooks/use-get-profiles'
-import { usePrivy } from '@privy-io/react-auth'
-import { useEffect, useState } from 'react'
+import { useGetProfiles } from "@/components/auth/hooks/use-get-profiles";
+import { usePrivy } from "@privy-io/react-auth";
+import { usePara } from "@/components/provider/ParaProvider";
+import { useEffect, useState } from "react";
 
 export function useCurrentWallet() {
-  const [walletAddress, setWalletAddress] = useState<string>('')
-  const { user, authenticated, ready } = usePrivy()
+  const [walletAddress, setWalletAddress] = useState<string>("");
+  const { user, authenticated, ready } = usePrivy();
+  const { isConnected: isParaConnected, address: paraAddress } = usePara();
 
   const { profiles, loading } = useGetProfiles({
-    walletAddress: walletAddress || '',
-  })
+    walletAddress: walletAddress || "",
+  });
 
   useEffect(() => {
-    if (authenticated && ready && user && user.wallet) {
-      setWalletAddress(user.wallet?.address)
+    if (isParaConnected && paraAddress) {
+      setWalletAddress(paraAddress); // Use Para address if connected
+    } else if (authenticated && ready && user?.wallet?.address) {
+      setWalletAddress(user.wallet.address); // Fallback to Privy
     } else {
-      setWalletAddress('')
+      setWalletAddress("");
     }
-  }, [user, authenticated, ready])
+  }, [isParaConnected, paraAddress, user, authenticated, ready]);
 
   return {
-    walletIsConnected: !(walletAddress === ''),
+    walletIsConnected: walletAddress !== "",
     walletAddress,
     mainUsername: profiles?.[0]?.profile?.username,
     loadingMainUsername: loading,
     setWalletAddress,
-  }
+  };
 }

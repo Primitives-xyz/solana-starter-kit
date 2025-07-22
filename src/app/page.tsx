@@ -1,12 +1,13 @@
-import { PopularTokensTable } from '@/components/token/popular-tokens-table'
-import TokenChartSwapContainer from '@/components/trade/components/token-chart-swap-container'
-import { Avatar } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
-import { TrendingUp } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { Suspense } from 'react'
+import { ParaTransactionDemo } from "@/components/para-demo";
+import { PopularTokensTable } from "@/components/token/popular-tokens-table";
+import TokenChartSwapContainer from "@/components/trade/components/token-chart-swap-container";
+import { Avatar } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { TrendingUp } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { Suspense } from "react";
 
 // This is a server component (the default for page.tsx in Next.js App Router)
 export default function Page() {
@@ -75,6 +76,19 @@ export default function Page() {
             ))}
           </div>
         </section>
+        {/* Add Para Transaction Demo Section */}
+        <section className="container py-8">
+          <h2 className="text-2xl font-bold mb-6">Para Wallet Transactions</h2>
+          <Suspense
+            fallback={
+              <div className="h-[300px] flex items-center justify-center">
+                Loading transaction demo...
+              </div>
+            }
+          >
+            <ParaTransactionDemo />
+          </Suspense>
+        </section>
       </main>
       <footer className="border-t border-zinc-800 py-6">
         <div className="container flex flex-col md:flex-row items-center justify-between gap-4">
@@ -121,5 +135,5 @@ export default function Page() {
         </div>
       </footer>
     </div>
-  )
+  );
 }

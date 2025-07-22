@@ -168,4 +168,4 @@
   .input-primary {
     @apply bg-input border border-border text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20;
   }
-}
+} 

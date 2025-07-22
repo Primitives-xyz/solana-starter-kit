@@ -6,7 +6,7 @@ import { Inter } from 'next/font/google'
 import { ReactNode } from 'react'
 import { Toaster } from 'sonner'
 import './globals.css'
-
+import { ParaProvider } from '@/components/provider/ParaProvider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
@@ -30,9 +30,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <PrivyClientProvider>
+          <ParaProvider>
             <Header />
             <Toaster />
             <div className="max-w-6xl mx-auto pt-12 pb-22">{children}</div>
+            </ParaProvider> 
           </PrivyClientProvider>
         </ThemeProvider>
       </body>
